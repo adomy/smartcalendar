@@ -1,0 +1,18 @@
+#root {
+  min-height: 100vh;
+}
+
+.fc .fc-toolbar-title {
+  color: #1677ff;
+  font-weight: 600;
+}
+
+.fc .fc-button-primary {
+  background: #1677ff;
+  border-color: #1677ff;
+}
+
+.fc .fc-button-primary:disabled {
+  background: #c7dcff;
+  border-color: #c7dcff;
+}
