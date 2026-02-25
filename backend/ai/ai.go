@@ -29,7 +29,7 @@ type Proposal struct {
 	Description         string     `json:"description"`
 	ParticipantKeywords []string   `json:"participant_keywords"`
 	ParticipantIDs      []uint     `json:"participant_ids"`
-	EventID             *uint64    `json:"event_id"`
+	EventID             *uint      `json:"event_id"`
 	TargetTime          *time.Time `json:"target_time"`
 	TargetKeywords      []string   `json:"target_keywords"`
 }
@@ -182,12 +182,13 @@ func buildProposal(payload intentPayload) Proposal {
 	targetTime := parseTime(payload.TargetTime)
 	participantKeywords := normalizeKeywords(payload.ParticipantKeywords)
 	targetKeywords := normalizeKeywords(payload.TargetKeywords)
-	var eventID *uint64
+	var eventID *uint
 	if payload.EventID == "" {
 		eventID = nil
 	} else {
-		eventIDVal, _ := strconv.ParseUint(payload.EventID, 10, 64)
-		eventID = &eventIDVal
+		eventIDVal, _ := strconv.ParseUint(payload.EventID, 10, 32)
+		eventIDConverted := uint(eventIDVal)
+		eventID = &eventIDConverted
 	}
 	proposal := Proposal{
 		Action:              payload.Action,

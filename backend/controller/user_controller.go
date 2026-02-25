@@ -6,6 +6,7 @@ import (
 	"smartcalendar/model"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // UserController 负责用户资料与检索接口。
@@ -13,8 +14,8 @@ type UserController struct{}
 
 // UpdateProfileRequest 表示资料更新请求参数。
 type UpdateProfileRequest struct {
-	Nickname string `json:"nickname" binding:"omitempty,min=1,max=50"`
-	Avatar   string `json:"avatar" binding:"omitempty,max=500"`
+	Email  string `json:"email" binding:"omitempty,email,max=100"`
+	Avatar string `json:"avatar" binding:"omitempty,max=500"`
 }
 
 // GetProfile 返回当前登录用户资料。
@@ -27,7 +28,7 @@ func (u UserController) GetProfile(c *gin.Context) {
 	Success(c, userValue)
 }
 
-// UpdateProfile 更新昵称或头像信息。
+// UpdateProfile 更新邮箱或头像信息。
 func (u UserController) UpdateProfile(c *gin.Context) {
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -41,8 +42,17 @@ func (u UserController) UpdateProfile(c *gin.Context) {
 	}
 	user := userValue.(model.User)
 	updates := map[string]interface{}{}
-	if strings.TrimSpace(req.Nickname) != "" {
-		updates["nickname"] = strings.TrimSpace(req.Nickname)
+	trimmedEmail := strings.TrimSpace(req.Email)
+	if trimmedEmail != "" && trimmedEmail != user.Email {
+		var existing model.User
+		if err := model.DB.Where("email = ? AND id <> ?", trimmedEmail, user.ID).First(&existing).Error; err == nil {
+			Error(c, 40901, "邮箱已注册")
+			return
+		} else if err != nil && err != gorm.ErrRecordNotFound {
+			Error(c, 50000, "服务器内部错误")
+			return
+		}
+		updates["email"] = trimmedEmail
 	}
 	if strings.TrimSpace(req.Avatar) != "" {
 		updates["avatar"] = strings.TrimSpace(req.Avatar)

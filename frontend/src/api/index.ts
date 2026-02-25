@@ -28,6 +28,15 @@ export type AIChatResponse = {
   event?: EventItem
 }
 
+export type SpeechSubmitResponse = {
+  task_id: string
+}
+
+export type SpeechQueryResponse = {
+  status: 'processing' | 'done'
+  text?: string
+}
+
 export const register = (payload: { nickname: string; email: string; password: string; avatar?: string }) =>
   apiClient.post<ApiResponse<AuthResponse>>('/auth/register', payload)
 
@@ -36,7 +45,7 @@ export const login = (payload: { email: string; password: string }) =>
 
 export const getProfile = () => apiClient.get<ApiResponse<User>>('/user/profile')
 
-export const updateProfile = (payload: { nickname?: string; avatar?: string }) =>
+export const updateProfile = (payload: { email?: string; avatar?: string }) =>
   apiClient.put<ApiResponse<User>>('/user/profile', payload)
 
 export const uploadAvatar = (file: File) => {
@@ -98,6 +107,17 @@ export const markAllNotificationsRead = () =>
 
 export const aiChat = (payload: { message: string; confirm_id?: string; confirm?: boolean; event_id?: number }) =>
   apiClient.post<ApiResponse<AIChatResponse>>('/ai/chat', payload)
+
+export const aiSpeechSubmit = (file: Blob) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiClient.post<ApiResponse<SpeechSubmitResponse>>('/ai/speech/submit', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+export const aiSpeechQuery = (taskId: string) =>
+  apiClient.post<ApiResponse<SpeechQueryResponse>>('/ai/speech/query', { task_id: taskId })
 
 export const listAdminUsers = (params: { page?: number; page_size?: number }) =>
   apiClient.get<ApiResponse<PageResult<User>>>('/admin/users', { params })

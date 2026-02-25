@@ -3,11 +3,12 @@ package controller
 import (
 	"path/filepath"
 	"strings"
-	"time"
 
 	"smartcalendar/config"
+	"smartcalendar/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // UploadController 负责头像上传接口。
@@ -22,18 +23,28 @@ func (u UploadController) UploadAvatar(c *gin.Context) {
 		Error(c, 40001, "参数校验失败：请上传文件")
 		return
 	}
+	if file.Size > 10*1024*1024 {
+		Error(c, 40001, "参数校验失败：文件过大")
+		return
+	}
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	if ext == "" {
 		ext = ".png"
 	}
-	fileName := time.Now().Format("20060102_150405") + "_" + sanitizeFilename(file.Filename)
-	savePath := filepath.Join(u.Cfg.UploadAvatarDir, fileName)
-	if err := c.SaveUploadedFile(file, savePath); err != nil {
+	objectKey := strings.Trim(u.Cfg.TOSAvatarPrefix, "/") + "/" + uuid.NewString() + "_" + sanitizeFilename(file.Filename)
+	src, err := file.Open()
+	if err != nil {
+		Error(c, 50000, "文件上传失败")
+		return
+	}
+	defer src.Close()
+	url, err := service.UploadToTOS(c.Request.Context(), u.Cfg, objectKey, src)
+	if err != nil {
 		Error(c, 50000, "文件上传失败")
 		return
 	}
 	Success(c, gin.H{
-		"url": u.Cfg.UploadAvatarPrefix + "/" + fileName,
+		"url": url,
 	})
 }
 

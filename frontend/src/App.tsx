@@ -6,6 +6,7 @@ import AdminUsers from './pages/AdminUsers'
 import CalendarPage from './pages/Calendar'
 import Login from './pages/Login'
 import OperationLogs from './pages/OperationLogs'
+import Profile from './pages/Profile'
 import Register from './pages/Register'
 import { useAuthStore } from './store/auth'
 import './App.css'
@@ -53,6 +54,14 @@ function App() {
         element={
           <ProtectedLayout>
             <CalendarPage />
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedLayout>
+            <Profile />
           </ProtectedLayout>
         }
       />

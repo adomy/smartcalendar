@@ -49,20 +49,24 @@ const OperationLogs: React.FC = () => {
           {
             title: '操作类型',
             dataIndex: 'action',
+            width: 120,
             render: (value) => <Tag color={actionColor[value] || 'blue'}>{value}</Tag>,
           },
           {
             title: '日程标题',
             dataIndex: 'target_title',
+            width: 220,
           },
           {
             title: '操作时间',
             dataIndex: 'created_at',
+            width: 180,
             render: (value) => new Date(value).toLocaleString(),
           },
           {
             title: '操作详情',
             dataIndex: 'detail',
+            width: 200,
           },
         ]}
       />

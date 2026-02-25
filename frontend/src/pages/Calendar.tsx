@@ -9,6 +9,7 @@ import AIInput from '../components/AIInput'
 import EventFormModal from '../components/EventFormModal'
 import { createEvent, deleteEvent, listEvents, updateEvent } from '../api'
 import type { EventItem } from '../types'
+import './Calendar.css'
 
 const { Text } = Typography
 
@@ -136,38 +137,59 @@ const CalendarPage: React.FC = () => {
       {contextHolder}
       <AIInput onSuccess={() => fetchEvents()} />
       <Card style={{ marginTop: 16 }} loading={loading}>
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'timeGridDay,timeGridWeek,dayGridMonth',
-          }}
-          selectable
-          editable
-          events={calendarEvents}
-          select={handleSelect}
-          eventClick={handleEventClick}
-          eventDrop={handleEventMove}
-          eventResize={handleEventMove}
-          eventContent={(arg) => {
-            const event = arg.event.extendedProps as EventItem
-            return (
-              <div>
-                <div>#{event.id} {arg.timeText} {arg.event.title}</div>
-                {event.is_collaboration && <Badge color="#1677FF" text="协作" />}
-              </div>
-            )
-          }}
-          eventDidMount={(info) => {
-            const event = info.event.extendedProps as EventItem
-            const text = [info.event.title, event.location || '', info.event.start?.toLocaleString() || '', info.event.end?.toLocaleString() || '']
-              .filter(Boolean)
-              .join('\n')
-            info.el.title = text
-          }}
-        />
+        <div className="calendarViewport">
+          <FullCalendar
+            height="100%"
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="timeGridWeek"
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'timeGridDay,timeGridWeek,dayGridMonth',
+            }}
+            expandRows={false}
+            slotLabelFormat={{
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }}
+            scrollTime="08:00:00"
+            eventTimeFormat={{
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }}
+            slotMinTime="00:00:00"
+            slotMaxTime="24:00:00"
+            slotDuration="01:00:00"
+            slotLabelInterval="01:00:00"
+            selectable
+            editable
+            events={calendarEvents}
+            select={handleSelect}
+            eventClick={handleEventClick}
+            eventDrop={handleEventMove}
+            eventResize={handleEventMove}
+            eventContent={(arg) => {
+              const event = arg.event.extendedProps as EventItem
+              return (
+                <div>
+                  <div>
+                    #{event.id} {arg.timeText} {arg.event.title}
+                  </div>
+                  {event.is_collaboration && <Badge color="#1677FF" text="协作" />}
+                </div>
+              )
+            }}
+            eventDidMount={(info) => {
+              const event = info.event.extendedProps as EventItem
+              const text = [info.event.title, event.location || '', info.event.start?.toLocaleString() || '', info.event.end?.toLocaleString() || '']
+                .filter(Boolean)
+                .join('\n')
+              info.el.title = text
+            }}
+          />
+        </div>
       </Card>
 
       <EventFormModal

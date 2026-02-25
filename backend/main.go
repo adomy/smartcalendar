@@ -17,9 +17,6 @@ import (
 func main() {
 	cfg := config.Load()
 
-	if err := os.MkdirAll(cfg.UploadAvatarDir, 0755); err != nil {
-		panic(err)
-	}
 	if err := os.MkdirAll("data", 0755); err != nil {
 		panic(err)
 	}
@@ -30,7 +27,6 @@ func main() {
 	}
 
 	engine := router.SetupRouter(cfg)
-	engine.Static("/upload/avatars", cfg.UploadAvatarDir)
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ok",

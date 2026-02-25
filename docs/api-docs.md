@@ -822,3 +822,52 @@ Query 参数：
 }
 ```
 
+### 9.2 语音识别任务提交
+
+- Method: `POST`
+- Path: `/api/ai/speech/submit`
+- Auth: JWT
+- Content-Type: `multipart/form-data`
+
+请求体：
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---:|---|
+| file | file | 是 | 语音文件（推荐 webm/mp3/wav/ogg） |
+
+响应 `data`：
+
+```json
+{
+  "task_id": "67ee89ba-7050-4c04-a3d7-ac61a63499b3"
+}
+```
+
+### 9.3 语音识别结果查询
+
+- Method: `POST`
+- Path: `/api/ai/speech/query`
+- Auth: JWT
+
+请求体：
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---:|---|
+| task_id | string | 是 | 提交后返回的任务 ID |
+
+响应 `data`（成功）：
+
+```json
+{
+  "status": "done",
+  "text": "这是字节跳动，今日头条母公司。"
+}
+```
+
+响应 `data`（处理中）：
+
+```json
+{
+  "status": "processing"
+}
+```

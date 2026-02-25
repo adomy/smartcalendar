@@ -2,27 +2,33 @@ package controller
 
 import (
 	"errors"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"smartcalendar/ai"
+	"smartcalendar/config"
 	"smartcalendar/model"
 	"smartcalendar/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // AIController 负责 AI 对话入口与确认执行。
 type AIController struct {
+	Cfg     config.AppConfig
 	Service *ai.AIService
 }
 
 // AIChatRequest 表示 AI 对话输入与确认参数。
 type AIChatRequest struct {
-	Message   string  `json:"message" binding:"required,min=1,max=1000"`
-	ConfirmID string  `json:"confirm_id"`
-	Confirm   bool    `json:"confirm"`
-	EventID   *uint64 `json:"event_id"`
+	Message   string `json:"message" binding:"required,min=1,max=1000"`
+	ConfirmID string `json:"confirm_id"`
+	Confirm   bool   `json:"confirm"`
+	EventID   *uint  `json:"event_id"`
 }
 
 // Chat 处理 AI 对话、候选返回与确认执行。
@@ -134,7 +140,7 @@ func (a AIController) Chat(c *gin.Context) {
 			return
 		}
 		if len(candidates) == 1 && result.Proposal.EventID == nil {
-			candidateEventID := uint64(candidates[0].ID)
+			candidateEventID := candidates[0].ID
 			result.Proposal.EventID = &candidateEventID
 		}
 	}
@@ -415,4 +421,63 @@ func deleteEventFromProposal(user model.User, proposal ai.Proposal) (model.Event
 
 	_ = service.CreateChangeNotifications(event, participantIDs)
 	return event, nil
+}
+
+type SpeechQueryRequest struct {
+	TaskID string `json:"task_id" binding:"required"`
+}
+
+func (a AIController) SpeechSubmit(c *gin.Context) {
+	user := c.MustGet("user").(model.User)
+	file, err := c.FormFile("file")
+	if err != nil {
+		Error(c, 40001, "参数校验失败：请上传文件")
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext == "" {
+		format := strings.TrimPrefix(a.Cfg.SpeechFormat, ".")
+		ext = "." + format
+	}
+	fileName := uuid.NewString() + ext
+	if file.Size > 50*1024*1024 {
+		Error(c, 40001, "参数校验失败：文件过大")
+		return
+	}
+	objectKey := strings.Trim(a.Cfg.TOSAudioPrefix, "/") + "/" + fileName
+	src, err := file.Open()
+	if err != nil {
+		Error(c, 50000, "文件打开失败")
+		return
+	}
+	defer src.Close()
+	fileURL, err := service.UploadToTOS(c.Request.Context(), a.Cfg, objectKey, src)
+	if err != nil {
+		Error(c, 50000, "文件上传失败")
+		return
+	}
+	taskID, err := service.SubmitSpeechTask(a.Cfg, fileURL, strconv.FormatUint(uint64(user.ID), 10))
+	if err != nil {
+		Error(c, 50000, err.Error())
+		return
+	}
+	Success(c, gin.H{"task_id": taskID})
+}
+
+func (a AIController) SpeechQuery(c *gin.Context) {
+	var req SpeechQueryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		Error(c, 40001, "参数校验失败："+err.Error())
+		return
+	}
+	status, text, err := service.QuerySpeechTask(a.Cfg, req.TaskID)
+	if err != nil {
+		Error(c, 50000, err.Error())
+		return
+	}
+	if status == "processing" {
+		Success(c, gin.H{"status": "processing"})
+		return
+	}
+	Success(c, gin.H{"status": "done", "text": text})
 }
